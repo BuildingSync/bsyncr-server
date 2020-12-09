@@ -11,17 +11,16 @@ SHELL ["/bin/bash", "-c"]
 # setup R packages
 RUN Rscript - <<< $'install.packages("devtools");'
 RUN Rscript - <<< $'install.packages("rnoaa");'
+# prefetch weather station data so first request isn't terribly slow
+RUN Rscript - <<< $'\n\
+    library("rnoaa"); \n\
+    rnoaa::ghcnd_stations();'
 RUN Rscript - <<< $'\n\
     library("devtools"); \n\
     devtools::install_github("kW-Labs/nmecr", ref="0bb2b7746d96eeb78b12bf4a13a42f49b3518d35", upgrade="never");'
 RUN Rscript - <<< $'\n\
     library("devtools"); \n\
-    devtools::install_github("macintoshpie/bsyncr", ref="feat/updates-for-seed", upgrade="never");'
-
-# prefetch weather station data so first request isn't terribly slow
-RUN Rscript - <<< $'\n\
-    library("rnoaa"); \n\
-    rnoaa::ghcnd_stations();'
+    devtools::install_github("macintoshpie/bsyncr", ref="feat/updates-for-seed", upgrade="never"); '
 
 # set work directory
 WORKDIR /usr/src/app

@@ -4,7 +4,30 @@ library("nmecr")
 library("bsyncr")
 library("rjson")
 
-run_analysis <- function() {
+run_analysis <- function(bsync_filepath) {
+  baseline_scenario_id <- "Scenario-bsyncr"
+  bsync_doc <- xml2::read_xml(bsync_filepath) %>%
+    bsyncr::bs_stub_scenarios(linked_building_id = "My-Fav-Building", baseline_id = baseline_scenario_id)
+
+  baseline_xpath <- sprintf("//auc:Scenario[@ID = '%s']", baseline_scenario_id)
+  sc_baseline <- xml2::xml_find_first(bsync_doc, baseline_xpath)
+  not_used <- sc_baseline %>% bsyncr::bs_stub_derived_model(dm_id = "DerivedModel-bsyncr",
+                                                            dm_period = "Baseline",
+                                                            sc_type = "Current Building")
+
+  b_df <- bsyncr::bs_parse_nmecr_df(bsync_doc, insert_weather_data=TRUE)
+  SLR_model <- nmecr::model_with_SLR(b_df,
+                                     nmecr::assign_model_inputs(regression_type = "SLR"))
+
+  not_used <- bs_gen_dm_nmecr(nmecr_baseline_model = SLR_model,
+                              x = bsync_doc)
+
+  return(bsync_doc)
+}
+
+output_filename <- "output/test1.xml"
+err_filename <- "output/error.json"
+tryCatch({
   NOAA_TOKEN <- Sys.getenv('NOAA_TOKEN')
   if (NOAA_TOKEN == "") {
     stop("Missing NOAA token env var: NOAA_TOKEN")
@@ -17,33 +40,6 @@ run_analysis <- function() {
   }
   bsync_filepath <- args[1]
 
-  schema_loc <- "https://raw.githubusercontent.com/BuildingSync/schema/feat/nmecr-support/BuildingSync.xsd"
-  bsync_doc <- bsyncr::bs_gen_root_doc(schema_loc) %>%
-    bsyncr::bs_stub_bldg(bldg_id = "My-Fav-Building") %>%
-    bsyncr::bs_stub_scenarios(linked_building_id = "My-Fav-Building")
-
-
-  baseline_xpath <- "//auc:Scenario[auc:ScenarioType/auc:CurrentBuilding/auc:CalculationMethod/auc:Measured]"
-  reporting_xpath <- "//auc:Scenario[auc:ScenarioType/auc:PackageOfMeasures/auc:CalculationMethod/auc:Measured]"
-
-  sc_baseline <- xml2::xml_find_first(bsync_doc, baseline_xpath)
-  not_used <- sc_baseline %>% bsyncr::bs_stub_derived_model(dm_id = "DerivedModel-Baseline",
-                                                            dm_period = "Baseline",
-                                                            sc_type = "Current Building")
-
-  b_df <- bsyncr::bs_parse_nmecr_df(xml2::read_xml(bsync_filepath))
-  SLR_model <- nmecr::model_with_SLR(b_df,
-                                    nmecr::assign_model_inputs(regression_type = "SLR"))
-
-  not_used <- bs_gen_dm_nmecr(nmecr_baseline_model = SLR_model,
-                              x = bsync_doc)
-
-  return(bsync_doc)
-}
-
-output_filename <- "output/test1.xml"
-err_filename <- "output/error.json"
-tryCatch({
   # setup/cleanup
   if (!dir.exists("output") ) {
     dir.create("output")
@@ -56,8 +52,8 @@ tryCatch({
   }
 
   # run analysis
-  bsync_doc <- run_analysis()
-  not_used <- xml2::write_xml(bsync_doc, output_filename)
+  bsync_doc <- run_analysis(bsync_filepath)
+  xml2::write_xml(bsync_doc, output_filename)
 }, error = function(e) {
   print(e)
   err <- list(message=e$message)
