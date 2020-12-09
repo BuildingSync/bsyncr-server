@@ -3,11 +3,14 @@ import json
 from os import path
 import subprocess
 
+from tools.validate_sch import validate_schematron
+
 from flask import Flask, jsonify, send_file, request
 
 
 app = Flask(__name__)
 R_SCRIPT_PATH = '/usr/src/app/bsyncr_server/lib/bsyncRunner.r'
+SCHEMATRON_FILE_PATH = '/usr/src/schematron/bsyncr_schematron.sch'
 INPUT_FILE_PATH = '/tmp/input.xml'
 ERROR_FILE_PATH = '/usr/src/app/output/error.json'
 OUTPUT_FILE_PATH = '/usr/src/app/output/test1.xml'
@@ -33,6 +36,18 @@ def root():
         return json_error(400, 'File content type must be application/xml')
 
     uploaded_file.save(INPUT_FILE_PATH)
+    errors = validate_schematron(SCHEMATRON_FILE_PATH, INPUT_FILE_PATH)
+    if errors:
+        def format_failure(failure):
+            return f'line {failure.line}: element {failure.element}: {failure.message}'
+        json_errors = [
+            {'detail': format_failure(error), 'status': '400'}
+            for error in errors
+        ]
+        return {
+            'errors': json_errors
+        }, 400
+
     ret_code = subprocess.call(["Rscript", R_SCRIPT_PATH, INPUT_FILE_PATH])
     if ret_code != 0:
         error_filepath = ERROR_FILE_PATH if path.exists(ERROR_FILE_PATH) else None

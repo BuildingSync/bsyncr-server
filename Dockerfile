@@ -1,10 +1,10 @@
 # pull official base image
 FROM python:3.8.1-slim-buster
 
-# install R
+# install R and other packages
 RUN apt-get update \
     && apt-get -y install \
-        r-base r-base-dev libssl-dev libcurl4-openssl-dev libxml2-dev
+        r-base r-base-dev libssl-dev libcurl4-openssl-dev libxml2-dev wget git
 
 SHELL ["/bin/bash", "-c"]
 
@@ -24,6 +24,9 @@ RUN Rscript - <<< $'\n\
 
 # set work directory
 WORKDIR /usr/src/app
+
+RUN mkdir /usr/src/schematron
+RUN wget -O '/usr/src/schematron/bsyncr_schematron.sch' 'https://raw.githubusercontent.com/macintoshpie/bsyncr/feat/updates-for-seed/bsyncr_schematron.sch'
 
 # set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1

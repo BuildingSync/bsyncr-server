@@ -1,1 +1,3 @@
 Flask==1.1.1
+# TestSuite for schematron helpers
+git+git://github.com/BuildingSync/TestSuite.git@d30138ae537a58e53c4ec5dc04521c1d063f4889
