@@ -9,11 +9,19 @@ RUN apt-get update \
 SHELL ["/bin/bash", "-c"]
 
 # setup R packages
+RUN Rscript - <<< $'install.packages("devtools");'
+RUN Rscript - <<< $'install.packages("rnoaa");'
 RUN Rscript - <<< $'\n\
-    install.packages("devtools"); \n\
     library("devtools"); \n\
-    devtools::install_github("kW-Labs/nmecr", upgrade="never"); \n\
-    devtools::install_github("BuildingSync/bsyncr", upgrade="never");'
+    devtools::install_github("kW-Labs/nmecr", ref="0bb2b7746d96eeb78b12bf4a13a42f49b3518d35", upgrade="never");'
+RUN Rscript - <<< $'\n\
+    library("devtools"); \n\
+    devtools::install_github("macintoshpie/bsyncr", ref="feat/updates-for-seed", upgrade="never");'
+
+# prefetch weather station data so first request isn't terribly slow
+RUN Rscript - <<< $'\n\
+    library("rnoaa"); \n\
+    rnoaa::ghcnd_stations();'
 
 # set work directory
 WORKDIR /usr/src/app
@@ -30,8 +38,6 @@ RUN pip install -r requirements.txt
 
 # copy project
 COPY . /usr/src/app/
-COPY bsyncr_server/lib/bsyncRunner.r /usr/local/bin/bsyncRunner.r
-RUN chmod +x /usr/local/bin/bsyncRunner.r
 
 EXPOSE 5000
 

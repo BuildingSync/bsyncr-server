@@ -2,40 +2,65 @@
 
 library("nmecr")
 library("bsyncr")
+library("rjson")
 
-schema_loc <- "https://raw.githubusercontent.com/BuildingSync/schema/feat/nmecr-support/BuildingSync.xsd"
-bsync_doc <- bsyncr::bs_gen_root_doc(schema_loc) %>%
-  bsyncr::bs_stub_bldg(bldg_id = "My-Fav-Building") %>%
-  bsyncr::bs_stub_scenarios(linked_building_id = "My-Fav-Building")
+run_analysis <- function() {
+  NOAA_TOKEN <- Sys.getenv('NOAA_TOKEN')
+  if (NOAA_TOKEN == "") {
+    stop("Missing NOAA token env var: NOAA_TOKEN")
+  }
+  options(noaakey=NOAA_TOKEN)
+
+  args <- commandArgs(trailingOnly=TRUE)
+  if (length(args) < 1) {
+    stop("Missing file argument. Please pass a file path")
+  }
+  bsync_filepath <- args[1]
+
+  schema_loc <- "https://raw.githubusercontent.com/BuildingSync/schema/feat/nmecr-support/BuildingSync.xsd"
+  bsync_doc <- bsyncr::bs_gen_root_doc(schema_loc) %>%
+    bsyncr::bs_stub_bldg(bldg_id = "My-Fav-Building") %>%
+    bsyncr::bs_stub_scenarios(linked_building_id = "My-Fav-Building")
 
 
-baseline_xpath <- "//auc:Scenario[auc:ScenarioType/auc:CurrentBuilding/auc:CalculationMethod/auc:Measured]"
-reporting_xpath <- "//auc:Scenario[auc:ScenarioType/auc:PackageOfMeasures/auc:CalculationMethod/auc:Measured]"
+  baseline_xpath <- "//auc:Scenario[auc:ScenarioType/auc:CurrentBuilding/auc:CalculationMethod/auc:Measured]"
+  reporting_xpath <- "//auc:Scenario[auc:ScenarioType/auc:PackageOfMeasures/auc:CalculationMethod/auc:Measured]"
 
-sc_baseline <- xml2::xml_find_first(bsync_doc, baseline_xpath)
-not_used <- sc_baseline %>% bsyncr::bs_stub_derived_model(dm_id = "DerivedModel-Baseline",
-                                                          dm_period = "Baseline",
-                                                          sc_type = "Current Building")
-# sc_reporting <- xml2::xml_find_first(bsync_doc, reporting_xpath)
-# not_used <- sc_reporting %>% bsyncr::bs_stub_derived_model(dm_id = "DerivedModel-Reporting",
-#                                                            dm_period = "Reporting",
-#                                                            sc_type = "Package of Measures")
+  sc_baseline <- xml2::xml_find_first(bsync_doc, baseline_xpath)
+  not_used <- sc_baseline %>% bsyncr::bs_stub_derived_model(dm_id = "DerivedModel-Baseline",
+                                                            dm_period = "Baseline",
+                                                            sc_type = "Current Building")
 
-start_dt <- "03/01/2012 00:00"
-end_dt <- "02/28/2013 23:59"
-data_int <- "Daily"
-b_df <- nmecr::create_dataframe(eload_data = nmecr::eload,
-                                temp_data = nmecr::temp,
-                                start_date = start_dt,
-                                end_date = end_dt,
-                                convert_to_data_interval = data_int)
-SLR_model <- nmecr::model_with_SLR(b_df,
-                                   nmecr::assign_model_inputs(regression_type = "SLR"))
+  b_df <- bsyncr::bs_parse_nmecr_df(xml2::read_xml(bsync_filepath))
+  SLR_model <- nmecr::model_with_SLR(b_df,
+                                    nmecr::assign_model_inputs(regression_type = "SLR"))
 
-not_used <- bs_gen_dm_nmecr(nmecr_baseline_model = SLR_model,
-                            x = bsync_doc)
+  not_used <- bs_gen_dm_nmecr(nmecr_baseline_model = SLR_model,
+                              x = bsync_doc)
 
-if (!dir.exists("output") ) {
-  dir.create("output")
+  return(bsync_doc)
 }
-not_used <- xml2::write_xml(bsync_doc, "output/test1.xml")
+
+output_filename <- "output/test1.xml"
+err_filename <- "output/error.json"
+tryCatch({
+  # setup/cleanup
+  if (!dir.exists("output") ) {
+    dir.create("output")
+  }
+  if (file.exists(output_filename)) {
+    file.remove(output_filename)
+  }
+  if (file.exists(err_filename)) {
+    file.remove(err_filename)
+  }
+
+  # run analysis
+  bsync_doc <- run_analysis()
+  not_used <- xml2::write_xml(bsync_doc, output_filename)
+}, error = function(e) {
+  print(e)
+  err <- list(message=e$message)
+  write(rjson::toJSON(err), err_filename)
+  quit(status=1)
+})
