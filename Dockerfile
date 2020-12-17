@@ -4,7 +4,7 @@ FROM python:3.8.1-slim-buster
 # install R and other packages
 RUN apt-get update \
     && apt-get -y install \
-        r-base r-base-dev libssl-dev libcurl4-openssl-dev libxml2-dev wget git
+        r-base r-base-dev libssl-dev libcurl4-openssl-dev libxml2-dev wget git libgit2-dev
 
 SHELL ["/bin/bash", "-c"]
 
