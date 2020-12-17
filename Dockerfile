@@ -20,13 +20,13 @@ RUN Rscript - <<< $'\n\
     devtools::install_github("kW-Labs/nmecr", ref="0bb2b7746d96eeb78b12bf4a13a42f49b3518d35", upgrade="never");'
 RUN Rscript - <<< $'\n\
     library("devtools"); \n\
-    devtools::install_github("macintoshpie/bsyncr", ref="feat/updates-for-seed", upgrade="never"); '
+    devtools::install_github("BuildingSync/bsyncr", ref="develop", upgrade="never"); '
 
 # set work directory
 WORKDIR /usr/src/app
 
 RUN mkdir /usr/src/schematron
-RUN wget -O '/usr/src/schematron/bsyncr_schematron.sch' 'https://raw.githubusercontent.com/macintoshpie/bsyncr/feat/updates-for-seed/bsyncr_schematron.sch'
+RUN wget -O '/usr/src/schematron/bsyncr_schematron.sch' 'https://raw.githubusercontent.com/BuildingSync/bsyncr/develop/bsyncr_schematron.sch'
 
 # set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
