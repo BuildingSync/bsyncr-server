@@ -32,11 +32,14 @@ def root():
     if 'file' not in request.files:
         return json_error(400, 'No file in request')
     uploaded_file = request.files['file']
-    if uploaded_file.content_type != 'application/xml':
-        return json_error(400, 'File content type must be application/xml')
 
     uploaded_file.save(INPUT_FILE_PATH)
-    errors = validate_schematron(SCHEMATRON_FILE_PATH, INPUT_FILE_PATH)
+    try:
+        errors = validate_schematron(SCHEMATRON_FILE_PATH, INPUT_FILE_PATH)
+    except Exception as e:
+        print(e)
+        return json_error(400, 'Failed to run schematron. Is your XML well-formed?')
+
     if errors:
         def format_failure(failure):
             return f'line {failure.line}: element {failure.element}: {failure.message}'
@@ -48,8 +51,11 @@ def root():
             'errors': json_errors
         }, 400
 
-    ret_code = subprocess.call(["Rscript", R_SCRIPT_PATH, INPUT_FILE_PATH])
-    if ret_code != 0:
+    completed_process = subprocess.run(
+        ["Rscript", R_SCRIPT_PATH, INPUT_FILE_PATH],
+        capture_output=True,
+    )
+    if completed_process.returncode != 0:
         error_filepath = ERROR_FILE_PATH if path.exists(ERROR_FILE_PATH) else None
         if error_filepath is None:
             raise Exception(f'Expected to find error json at "{ERROR_FILE_PATH}"')
