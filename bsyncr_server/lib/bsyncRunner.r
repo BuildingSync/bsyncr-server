@@ -12,8 +12,7 @@ run_analysis <- function(bsync_filepath, model_type) {
   baseline_xpath <- sprintf("//auc:Scenario[@ID = '%s']", baseline_scenario_id)
   sc_baseline <- xml2::xml_find_first(bsync_doc, baseline_xpath)
   not_used <- sc_baseline %>% bsyncr::bs_stub_derived_model(dm_id = "DerivedModel-bsyncr",
-                                                            dm_period = "Baseline",
-                                                            sc_type = "Current Building")
+                                                            dm_period = "Baseline")
 
   b_df <- bsyncr::bs_parse_nmecr_df(bsync_doc, insert_weather_data=TRUE)
 
@@ -78,7 +77,7 @@ tryCatch({
 
   ggplot2::ggplot(model_df, aes(x = temp, y = value)) +
     geom_point(aes(color = variable), data=model_df[model_df$variable == "eload",]) +
-    geom_line(aes(color = variable), data=model_df[model_df$variable == "model_fit",], size = 1) +
+    geom_point(aes(color = variable), data=model_df[model_df$variable == "model_fit",]) +
     xlab("Temperature") +
     scale_y_continuous(name = "Energy Data & Model Fit (kWh)", labels = scales::comma) +
     theme_minimal() +

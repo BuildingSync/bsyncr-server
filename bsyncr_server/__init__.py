@@ -17,6 +17,7 @@ SCHEMATRON_FILE_PATH = '/usr/src/schematron/bsyncr_schematron.sch'
 INPUT_FILE_PATH = '/tmp/input.xml'
 OUTPUT_FILENAMES = ['result.xml', 'plot.png']
 ERROR_FILENAME = 'error.json'
+MODEL_CHOICES = ['SLR', '3PC', '3PH', '4P']
 
 
 def json_error(status_code, detail):
@@ -54,7 +55,10 @@ def root():
             'errors': json_errors
         }, 400
 
-    model_type = 'SLR'
+    model_type = request.args.get('model_type')
+    if model_type is None:
+        return json_error(400, f'Invalid value for `model_type` query parameter. '
+                               f'Must provide one of the following: {", ".join(MODEL_CHOICES)}')
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         completed_process = subprocess.run(
@@ -62,13 +66,13 @@ def root():
             capture_output=True,
         )
 
-        ERROR_FILE_PATH = f'{tmpdirname}/{ERROR_FILENAME}'
         if completed_process.returncode != 0:
-            if not path.exists(ERROR_FILE_PATH):
-                raise Exception(f'Expected to find error json at "{ERROR_FILE_PATH}"')
-            with open(ERROR_FILE_PATH, 'r') as f:
+            error_filepath = f'{tmpdirname}/{ERROR_FILENAME}'
+            if not path.exists(error_filepath):
+                raise Exception(f'Expected to find error json at "{error_filepath}"')
+            with open(error_filepath, 'r') as f:
                 r_error = json.load(f)
-                return json_error(500, r_error['message'])
+                return json_error(500, f'Unexpected error from bsyncr script: {r_error["message"]}')
 
         zip_file = BytesIO()
         with zipfile.ZipFile(zip_file, 'w') as zf:   
