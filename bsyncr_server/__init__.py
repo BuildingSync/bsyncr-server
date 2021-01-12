@@ -1,7 +1,10 @@
 
+from io import BytesIO
 import json
 from os import path
 import subprocess
+import tempfile
+import zipfile
 
 from tools.validate_sch import validate_schematron
 
@@ -12,8 +15,9 @@ app = Flask(__name__)
 R_SCRIPT_PATH = '/usr/src/app/bsyncr_server/lib/bsyncRunner.r'
 SCHEMATRON_FILE_PATH = '/usr/src/schematron/bsyncr_schematron.sch'
 INPUT_FILE_PATH = '/tmp/input.xml'
-ERROR_FILE_PATH = '/usr/src/app/output/error.json'
-OUTPUT_FILE_PATH = '/usr/src/app/output/test1.xml'
+OUTPUT_FILENAMES = ['result.xml', 'plot.png']
+ERROR_FILENAME = 'error.json'
+MODEL_CHOICES = ['SLR', '3PC', '3PH', '4P']
 
 
 def json_error(status_code, detail):
@@ -51,20 +55,29 @@ def root():
             'errors': json_errors
         }, 400
 
-    completed_process = subprocess.run(
-        ["Rscript", R_SCRIPT_PATH, INPUT_FILE_PATH],
-        capture_output=True,
-    )
-    if completed_process.returncode != 0:
-        error_filepath = ERROR_FILE_PATH if path.exists(ERROR_FILE_PATH) else None
-        if error_filepath is None:
-            raise Exception(f'Expected to find error json at "{ERROR_FILE_PATH}"')
-        with open(error_filepath, 'r') as f:
-            r_error = json.load(f)
-            return json_error(500, r_error['message'])
+    model_type = request.args.get('model_type')
+    if model_type is None:
+        return json_error(400, f'Invalid value for `model_type` query parameter. '
+                               f'Must provide one of the following: {", ".join(MODEL_CHOICES)}')
 
-    output_filepath = OUTPUT_FILE_PATH if path.exists(OUTPUT_FILE_PATH) else None
-    if output_filepath is None:
-        raise Exception(f'Expected to find output xml at "{OUTPUT_FILE_PATH}"')
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        completed_process = subprocess.run(
+            ["Rscript", R_SCRIPT_PATH, INPUT_FILE_PATH, model_type, tmpdirname],
+            capture_output=True,
+        )
 
-    return send_file(OUTPUT_FILE_PATH)
+        if completed_process.returncode != 0:
+            error_filepath = f'{tmpdirname}/{ERROR_FILENAME}'
+            if not path.exists(error_filepath):
+                raise Exception(f'Expected to find error json at "{error_filepath}"')
+            with open(error_filepath, 'r') as f:
+                r_error = json.load(f)
+                return json_error(500, f'Unexpected error from bsyncr script: {r_error["message"]}')
+
+        zip_file = BytesIO()
+        with zipfile.ZipFile(zip_file, 'w') as zf:   
+            for filename in OUTPUT_FILENAMES:
+                zf.write(f'{tmpdirname}/{filename}', arcname=filename)
+
+        zip_file.seek(0)
+        return send_file(zip_file, attachment_filename='bsyncr.zip')
