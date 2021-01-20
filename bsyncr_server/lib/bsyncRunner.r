@@ -75,9 +75,24 @@ tryCatch({
   model_df <- model$training_data %>%
     tidyr::gather(key = "variable", value = "value", c("eload", "model_fit"))
 
+  if (model$model_input_options$regression_type != "SLR") {
+    # Add a data point for the derived change point to make sure the line plot looks correct
+    temp_change_point <- abs(model$model$psi[2]) # this is the estimated temperature for the change point - taking abs b/c it is incorrectly negative for some models
+    predictions <- calculate_model_predictions(
+      training_data=model$training_data,
+      prediction_data=as.data.frame(list(time=c(2019-01-01), temp=c(temp_change_point))),
+      modeled_object=model
+    )
+    load_change_point <- predictions$predictions[1]
+    model_df <- model_df %>% add_row(
+      temp=temp_change_point,
+      variable="model_fit",
+      value=load_change_point)
+  }
+
   ggplot2::ggplot(model_df, aes(x = temp, y = value)) +
     geom_point(aes(color = variable), data=model_df[model_df$variable == "eload",]) +
-    geom_point(aes(color = variable), data=model_df[model_df$variable == "model_fit",]) +
+    geom_line(aes(color = variable), data=model_df[model_df$variable == "model_fit",]) +
     xlab("Temperature") +
     scale_y_continuous(name = "Energy Data & Model Fit (kWh)", labels = scales::comma) +
     theme_minimal() +
