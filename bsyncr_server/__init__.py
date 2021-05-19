@@ -63,7 +63,6 @@ def root():
     with tempfile.TemporaryDirectory() as tmpdirname:
         completed_process = subprocess.run(
             ["Rscript", R_SCRIPT_PATH, INPUT_FILE_PATH, model_type, tmpdirname],
-            capture_output=True,
         )
 
         if completed_process.returncode != 0:
