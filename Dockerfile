@@ -10,7 +10,9 @@ SHELL ["/bin/bash", "-c"]
 
 # setup R packages
 RUN Rscript - <<< $'install.packages("devtools");'
-RUN Rscript - <<< $'install.packages("rnoaa");'
+RUN Rscript - <<< $'\n\
+    library("devtools"); \n\
+    devtools::install_github("ropensci/rnoaa@v1.3.4", upgrade="never");'
 # prefetch weather station data so first request isn't terribly slow
 RUN Rscript - <<< $'\n\
     library("rnoaa"); \n\
