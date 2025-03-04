@@ -1,0 +1,56 @@
+FROM node:20-alpine3.16 AS node
+
+# Install necessary dependencies (curl and ca-certificates)
+RUN apk add --no-cache curl ca-certificates && \
+    curl -fsSLk -o /usr/local/share/ca-certificates/nrel_root.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_root.pem && \
+    curl -fsSLk -o /usr/local/share/ca-certificates/nrel_xca1.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_xca1.pem && \
+    update-ca-certificates
+
+# Use Rocker R versioned image with R 4.4.2
+FROM rocker/r-ver:4.4.2
+
+RUN mkdir /usr/src/app
+
+# Copy the installed SSL certs from the node stage
+COPY --from=node /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=node /usr/share/ca-certificates /usr/share/ca-certificates
+COPY --from=node /usr/local/share/ca-certificates /usr/local/share/ca-certificates
+
+# setup R packages
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+    libcurl4-openssl-dev \
+    libxml2-dev \
+    wget \
+    && rm -rf /var/lib/apt/lists/* \
+    && Rscript -e "install.packages(c('curl', 'remotes', 'rnoaa'), repos='http://cran.us.r-project.org'); \
+    library('remotes'); \
+    remotes::install_github('ropensci/rnoaa@v1.3.4', upgrade='never'); \
+    remotes::install_github('kW-Labs/nmecr', ref='0bb2b7746d96eeb78b12bf4a13a42f49b3518d35', upgrade='never'); \
+    remotes::install_github('BuildingSync/bsyncr', ref='63da9648fe5351004f0eed484d7cf65dfbb456c7', upgrade='never'); \
+    library("rnoaa"); \
+    rnoaa::ghcnd_stations()" \
+    && strip /usr/local/lib/R/site-library/*/libs/*.so
+
+WORKDIR /usr/src/app
+
+RUN mkdir -p /usr/src/schematron && \
+    wget -O '/usr/src/schematron/bsyncr_schematron.sch' 'https://raw.githubusercontent.com/BuildingSync/bsyncr/develop/bsyncr_schematron.sch'
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV FLASK_APP=/usr/src/app/bsyncr_server/__init__.py
+
+# install dependencies
+RUN pip install --no-cache-dir --upgrade pip
+COPY ./requirements.txt /usr/src/app/requirements.txt
+# RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . /usr/src/app/
+
+EXPOSE 5000
+
+# CMD ["python3.13", "manage.py", "run", "-h", "0.0.0.0"]
+CMD ["sleep", "1200"]
+
