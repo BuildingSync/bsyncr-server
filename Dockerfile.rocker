@@ -21,6 +21,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
     libcurl4-openssl-dev \
     libxml2-dev \
+    python3 python3-pip python3-venv \
     wget \
     && rm -rf /var/lib/apt/lists/* \
     && Rscript -e "install.packages(c('curl', 'remotes', 'rnoaa'), repos='http://cran.us.r-project.org'); \
@@ -43,9 +44,9 @@ ENV PYTHONUNBUFFERED=1
 ENV FLASK_APP=/usr/src/app/bsyncr_server/__init__.py
 
 # install dependencies
-RUN pip install --no-cache-dir --upgrade pip
 COPY ./requirements.txt /usr/src/app/requirements.txt
-# RUN pip install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir --upgrade pip \
+    && pip3 install --no-cache-dir -r requirements.txt
 
 COPY . /usr/src/app/
 
