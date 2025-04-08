@@ -16,23 +16,24 @@ COPY --from=node /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificat
 COPY --from=node /usr/share/ca-certificates /usr/share/ca-certificates
 COPY --from=node /usr/local/share/ca-certificates /usr/local/share/ca-certificates
 
-# setup R packages
+# Step 1: Install system and R packages separately and copy only what’s needed for cache
+COPY ./install_r_packages.R /tmp/install_r_packages.R
+
+
+# Step 2: Run apt and R setup in an isolated, cacheable layer
+# Install system dependencies and required tools
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
     libcurl4-openssl-dev \
     libxml2-dev \
     python3 python3-pip python3-venv \
-    git wget \
+    git wget curl \
     libxslt-dev python3-dev build-essential \
     && rm -rf /var/lib/apt/lists/* \
-    && Rscript -e "install.packages(c('curl', 'remotes', 'rnoaa'), repos='http://cran.us.r-project.org'); \
-    library('remotes'); \
-    remotes::install_github('ropensci/rnoaa@v1.3.4', upgrade='never'); \
-    remotes::install_github('kW-Labs/nmecr', ref='0bb2b7746d96eeb78b12bf4a13a42f49b3518d35', upgrade='never'); \
-    remotes::install_github('BuildingSync/bsyncr', ref='63da9648fe5351004f0eed484d7cf65dfbb456c7', upgrade='never'); \
-    library("rnoaa"); \
-    rnoaa::ghcnd_stations()" \
-    && strip /usr/local/lib/R/site-library/*/libs/*.so
+    && Rscript /tmp/install_r_packages.R \
+    && strip /usr/local/lib/R/site-library/*/libs/*.so \
+    && rm -f /tmp/install_r_packages.R
+
 
 WORKDIR /usr/src/app
 
@@ -47,7 +48,7 @@ ENV PATH="/usr/src/app/venv/bin:$PATH"
 
 # install dependencies
 COPY ./requirements.txt /usr/src/app/requirements.txt
-RUN pip install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
 # Set environment variables
