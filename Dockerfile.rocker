@@ -61,7 +61,6 @@ RUN echo 'export PYENV_ROOT="/root/.pyenv"' >> /root/.bashrc \
     && echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> /root/.bashrc \
     && echo 'eval "$(pyenv init --path)"' >> /root/.bashrc \
     && echo 'eval "$(pyenv init -)"' >> /root/.bashrc
-    # && echo 'eval "$(pyenv virtualenv-init -)"' >> /root/.bashrc
 
 # Install pip 24.2 for Python 3.10.6
 RUN bash -c "source /root/.bashrc && python -m ensurepip --upgrade && python -m pip install --upgrade pip==24.2"
@@ -73,16 +72,6 @@ WORKDIR /usr/src/app
 # Install required Python packages, including nrel-appfleet from the custom PyPI host
 RUN bash -c "source /root/.bashrc && python -m pip install \
     --no-cache-dir -r requirements.txt"
-
-# # Install Poetry
-# RUN curl -sSL https://install.python-poetry.org | python3 -
-
-# # Set environment variables for Poetry
-# ENV POETRY_NO_INTERACTION=1 \
-# POETRY_VIRTUALENVS_CREATE=false
-
-# # Add Poetry to PATH
-# ENV PATH="/root/.local/bin:$PATH"
 
 RUN mkdir -p /usr/src/schematron && \
     wget -O '/usr/src/schematron/bsyncr_schematron.sch' 'https://raw.githubusercontent.com/BuildingSync/bsyncr/develop/bsyncr_schematron.sch'
@@ -96,5 +85,5 @@ COPY . /usr/src/app/
 
 EXPOSE 5000
 
-# CMD ["python3.13", "manage.py", "run", "-h", "0.0.0.0"]
+# CMD ["python", "manage.py", "run", "-h", "0.0.0.0"]
 CMD ["sleep", "1200"]
