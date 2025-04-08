@@ -1,0 +1,7 @@
+install.packages(c('curl', 'remotes', 'rnoaa'), repos='http://cran.us.r-project.org')
+library('remotes')
+remotes::install_github('ropensci/rnoaa@v1.3.4', upgrade='never')
+remotes::install_github('kW-Labs/nmecr', ref='0bb2b7746d96eeb78b12bf4a13a42f49b3518d35', upgrade='never')
+remotes::install_github('BuildingSync/bsyncr', ref='63da9648fe5351004f0eed484d7cf65dfbb456c7', upgrade='never')
+library(rnoaa)
+rnoaa::ghcnd_stations()
