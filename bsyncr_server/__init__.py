@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 import zipfile
 
-from tools.validate_sch import validate_schematron
+from testsuite.validate_sch import validate_schematron
 
 from flask import Flask, jsonify, send_file, request
 
