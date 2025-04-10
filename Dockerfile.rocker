@@ -1,0 +1,89 @@
+ARG BASE_IMAGE_TAG
+
+FROM node:20-alpine3.16 AS node
+
+# Install necessary dependencies (curl and ca-certificates)
+RUN apk add --no-cache curl ca-certificates && \
+    curl -fsSLk -o /usr/local/share/ca-certificates/nrel_root.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_root.pem && \
+    curl -fsSLk -o /usr/local/share/ca-certificates/nrel_xca1.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_xca1.pem && \
+    update-ca-certificates
+
+FROM rocker/r-ver:${BASE_IMAGE_TAG:-4.4.3}
+
+RUN mkdir /usr/src/app
+
+# Copy the installed SSL certs from the node stage
+COPY --from=node /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=node /usr/share/ca-certificates /usr/share/ca-certificates
+COPY --from=node /usr/local/share/ca-certificates /usr/local/share/ca-certificates
+
+# Step 1: Install system and R packages separately and copy only what’s needed for cache
+COPY ./install_r_packages.R /tmp/install_r_packages.R
+
+
+# Step 2: Run apt and R setup in an isolated, cacheable layer
+# Install system dependencies and required tools
+# Install system dependencies and required tools
+RUN apt-get update && \
+    apt-get upgrade -y && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    libbz2-dev \
+    libffi-dev \
+    liblzma-dev \
+    libncurses5-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libssl-dev \
+    libxml2-dev \
+    libxmlsec1-dev \
+    llvm \
+    make \
+    tk-dev \
+    wget \
+    xz-utils \
+    zlib1g-dev && \
+    rm -rf /var/lib/apt/lists/* \
+    && Rscript /tmp/install_r_packages.R \
+    && strip /usr/local/lib/R/site-library/*/libs/*.so \
+    && rm -f /tmp/install_r_packages.R
+
+
+ENV PYENV_ROOT="/root/.pyenv"
+ENV PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
+
+RUN git clone https://github.com/pyenv/pyenv.git $PYENV_ROOT && \
+    $PYENV_ROOT/bin/pyenv install 3.10.6 && \
+    $PYENV_ROOT/bin/pyenv global 3.10.6
+
+# Update shell configuration for pyenv in Docker environment
+RUN echo 'export PYENV_ROOT="/root/.pyenv"' >> /root/.bashrc \
+    && echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> /root/.bashrc \
+    && echo 'eval "$(pyenv init --path)"' >> /root/.bashrc \
+    && echo 'eval "$(pyenv init -)"' >> /root/.bashrc
+
+# Install pip 24.2 for Python 3.10.6
+RUN bash -c "source /root/.bashrc && python -m ensurepip --upgrade && python -m pip install --upgrade pip==24.2"
+
+COPY ./requirements.txt /usr/src/app/requirements.txt
+
+WORKDIR /usr/src/app
+
+# Install required Python packages, including nrel-appfleet from the custom PyPI host
+RUN bash -c "source /root/.bashrc && python -m pip install \
+    --no-cache-dir -r requirements.txt"
+
+RUN mkdir -p /usr/src/schematron && \
+    wget -O '/usr/src/schematron/bsyncr_schematron.sch' 'https://raw.githubusercontent.com/BuildingSync/bsyncr/develop/bsyncr_schematron.sch'
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV FLASK_APP=/usr/src/app/bsyncr_server/__init__.py
+
+COPY . /usr/src/app/
+
+EXPOSE 5000
+
+CMD ["python", "manage.py", "run", "-h", "0.0.0.0"]

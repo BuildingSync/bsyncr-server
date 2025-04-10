@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 import zipfile
 
-from tools.validate_sch import validate_schematron
+from testsuite.validate_sch import validate_schematron
 
 from flask import Flask, jsonify, send_file, request
 
@@ -80,3 +80,6 @@ def root():
 
         zip_file.seek(0)
         return send_file(zip_file, attachment_filename='bsyncr.zip')
+@app.route("/health", methods=["GET"])
+def health_check():
+    return jsonify({"status": "healthy"}), 200
