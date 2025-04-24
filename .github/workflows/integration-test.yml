@@ -23,7 +23,7 @@ jobs:
 
       - name: Run Docker Container
         run: |
-          docker run -p 8080:5000 -e NOAA_TOKEN bsyncr-server
+          docker run -d -p 8080:5000 -e NOAA_TOKEN bsyncr-server
           echo "Docker container started successfully"
 
       - name: Extra wait
