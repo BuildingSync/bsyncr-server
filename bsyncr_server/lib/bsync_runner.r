@@ -3,6 +3,9 @@
 library("nmecr")
 library("bsyncr")
 library("rjson")
+library("dplyr")
+library("ggplot2")
+
 
 run_analysis <- function(bsync_filepath, model_type) {
   baseline_scenario_id <- "Scenario-bsyncr"
@@ -43,7 +46,7 @@ run_analysis <- function(bsync_filepath, model_type) {
 args <- commandArgs(trailingOnly=TRUE)
 if (length(args) != 3) {
   print('USAGE:')
-  print('Rscript bsyncRunner.r bsync_input model_type output_directory')
+  print('Rscript bsync_runner.r bsync_input model_type output_directory')
   print('  bsync_input: path to input file')
   print('  model_type: type of model to fit')
   print('  output_directory: directory to output files')

@@ -11,7 +11,7 @@ from flask import Flask, jsonify, send_file, request
 
 
 app = Flask(__name__)
-R_SCRIPT_PATH = "/usr/src/app/bsyncr_server/lib/bsyncRunner.r"
+R_SCRIPT_PATH = "/usr/src/app/bsyncr_server/lib/bsync_runner.r"
 SCHEMATRON_FILE_PATH = "/usr/src/schematron/bsyncr_schematron.sch"
 INPUT_FILE_PATH = "/tmp/input.xml"
 OUTPUT_FILENAMES = ["result.xml", "plot.png"]
@@ -75,7 +75,7 @@ def root():
                 zf.write(f"{tmpdirname}/{filename}", arcname=filename)
 
         zip_file.seek(0)
-        return send_file(zip_file, attachment_filename="bsyncr.zip")
+        return send_file(zip_file, download_name="bsyncr.zip", as_attachment=True)
 
 
 @app.route("/health", methods=["GET"])

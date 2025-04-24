@@ -1,0 +1,27 @@
+{
+  "version": "0.2",
+  "ignorePaths": [],
+  "dictionaryDefinitions": [],
+  "dictionaries": [],
+  "words": [
+    "Arvada",
+    "balancepoint",
+    "bsync",
+    "bsyncr",
+    "crul",
+    "dataframe",
+    "datatypeid",
+    "dplyr",
+    "Drybulb",
+    "elec",
+    "NMEC",
+    "nmecr",
+    "NOAA",
+    "noaakey",
+    "rnoaa",
+    "testthat",
+    "tidyr"
+  ],
+  "ignoreWords": [],
+  "import": []
+}
