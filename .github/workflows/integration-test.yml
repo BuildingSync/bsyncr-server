@@ -54,12 +54,14 @@ jobs:
             exit 1
           fi
           echo "slr_results.zip file exists, proceeding with next steps."
+
       - name: Cleanup Docker Container
         run: |
           docker stop bsyncr-server
           docker rm bsyncr-server
-      - name: Save the artifact
-        uses: actions/upload-artifact@v3
+
+      - name: Upload HTML Artifact
+        uses: actions/upload-artifact@v4
         with:
           name: slr_results.zip
           path: ./tests/slr_results.zip
