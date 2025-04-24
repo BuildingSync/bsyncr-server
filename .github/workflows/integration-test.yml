@@ -23,7 +23,10 @@ jobs:
 
       - name: Run Docker Container
         run: |
-          docker run -d -p 8080:5000 -e NOAA_TOKEN bsyncr-server
+          docker run -d -p 8080:5000 \
+            --name bsyncr-server \
+            -e NOAA_TOKEN \
+            bsyncr-server
           echo "Docker container started successfully"
 
       - name: Extra wait
@@ -55,3 +58,8 @@ jobs:
         run: |
           docker stop bsyncr-server
           docker rm bsyncr-server
+      - name: Save the artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: slr_results.zip
+          path: ./tests/slr_results.zip
