@@ -1,28 +1,52 @@
-# pull official base image
-FROM python:3.8.1-slim-buster
+FROM python:3.12-slim-bullseye
 
 # install R and other packages
 RUN apt-get update \
     && apt-get -y install \
-        r-base r-base-dev libssl-dev libcurl4-openssl-dev libxml2-dev wget git libgit2-dev
+        build-essential \
+        build-essential \
+        r-base \
+        r-base-dev \
+        curl \
+        git \
+        libbz2-dev \
+        libcurl4-openssl-dev \
+        libfreetype6-dev \
+        libjpeg-dev \
+        libffi-dev \
+        libfontconfig1-dev \
+        libfribidi-dev \
+        libgit2-dev \
+        libharfbuzz-dev \
+        liblzma-dev \
+        libncurses5-dev \
+        libpng-dev \
+        libreadline-dev \
+        libsqlite3-dev \
+        libssl-dev \
+        libtiff5-dev \
+        libv8-dev \
+        libxml2-dev \
+        libxmlsec1-dev \
+        libxslt1-dev \
+        llvm \
+        tk-dev \
+        wget \
+        xz-utils \
+        zlib1g-dev \
+        python3-dev && \
+        rm -rf /var/lib/apt/lists/*
 
 SHELL ["/bin/bash", "-c"]
 
-# setup R packages
-RUN Rscript - <<< $'install.packages("devtools");'
-RUN Rscript - <<< $'\n\
-    library("devtools"); \n\
-    devtools::install_github("ropensci/rnoaa@v1.3.4", upgrade="never");'
-# prefetch weather station data so first request isn't terribly slow
-RUN Rscript - <<< $'\n\
-    library("rnoaa"); \n\
-    rnoaa::ghcnd_stations();'
-RUN Rscript - <<< $'\n\
-    library("devtools"); \n\
-    devtools::install_github("kW-Labs/nmecr", ref="0bb2b7746d96eeb78b12bf4a13a42f49b3518d35", upgrade="never");'
-RUN Rscript - <<< $'\n\
-    library("devtools"); \n\
-    devtools::install_github("BuildingSync/bsyncr", ref="63da9648fe5351004f0eed484d7cf65dfbb456c7", upgrade="never");'
+
+# Copy over the install packages script
+COPY ./install_r_packages.R /tmp/install_r_packages.R
+
+# Run the R package install script
+RUN Rscript /tmp/install_r_packages.R \
+    && rm -f /tmp/install_r_packages.R \
+    && strip /usr/local/lib/R/site-library/*/libs/*.so
 
 # set work directory
 WORKDIR /usr/src/app
@@ -31,9 +55,9 @@ RUN mkdir /usr/src/schematron
 RUN wget -O '/usr/src/schematron/bsyncr_schematron.sch' 'https://raw.githubusercontent.com/BuildingSync/bsyncr/develop/bsyncr_schematron.sch'
 
 # set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-ENV FLASK_APP /usr/src/app/bsyncr_server/__init__.py
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV FLASK_APP=/usr/src/app/bsyncr_server/main.py
 
 # install dependencies
 RUN pip install --upgrade pip

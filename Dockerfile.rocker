@@ -17,7 +17,7 @@ COPY --from=node /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificat
 COPY --from=node /usr/share/ca-certificates /usr/share/ca-certificates
 COPY --from=node /usr/local/share/ca-certificates /usr/local/share/ca-certificates
 
-# Step 1: Install system and R packages separately and copy only what’s needed for cache
+# Step 1: Install system and R packages separately and copy only what"s needed for cache
 COPY ./install_r_packages.R /tmp/install_r_packages.R
 
 
@@ -30,20 +30,31 @@ RUN apt-get update && \
     curl \
     git \
     libbz2-dev \
+    libcurl4-openssl-dev \
+    libfreetype6-dev \
+    libjpeg-dev \
     libffi-dev \
+    libfontconfig1-dev \
+    libfribidi-dev \
+    libgit2-dev \
+    libharfbuzz-dev \
     liblzma-dev \
     libncurses5-dev \
+    libpng-dev \
     libreadline-dev \
     libsqlite3-dev \
     libssl-dev \
+    libtiff5-dev \
+    libv8-dev \
     libxml2-dev \
     libxmlsec1-dev \
+    libxslt1-dev \
     llvm \
-    make \
     tk-dev \
     wget \
     xz-utils \
-    zlib1g-dev && \
+    zlib1g-dev \
+    python3-dev && \
     rm -rf /var/lib/apt/lists/* \
     && Rscript /tmp/install_r_packages.R \
     && strip /usr/local/lib/R/site-library/*/libs/*.so \
@@ -80,7 +91,7 @@ RUN mkdir -p /usr/src/schematron && \
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV FLASK_APP=/usr/src/app/bsyncr_server/__init__.py
+ENV FLASK_APP=/usr/src/app/bsyncr_server/main.py
 
 COPY . /usr/src/app/
 

@@ -1,6 +1,6 @@
 from flask.cli import FlaskGroup
 
-from bsyncr_server import app
+from bsyncr_server.main import app
 
 
 cli = FlaskGroup(app)
