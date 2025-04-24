@@ -17,7 +17,7 @@ COPY --from=node /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificat
 COPY --from=node /usr/share/ca-certificates /usr/share/ca-certificates
 COPY --from=node /usr/local/share/ca-certificates /usr/local/share/ca-certificates
 
-# Step 1: Install system and R packages separately and copy only what"s needed for cache
+# Step 1: Install system and R packages separately and copy only what is needed for cache
 COPY ./install_r_packages.R /tmp/install_r_packages.R
 
 
