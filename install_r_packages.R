@@ -1,3 +1,8 @@
+"""
+BuildingSync®, Copyright (c) Alliance for Sustainable Energy, LLC, and other contributors.
+See also https://github.com/BuildingSync/bsyncr-server/blob/main/LICENSE.txt
+"""
+
 # Install required packages if not already installed
 required_packages <- c(
   "remotes", "crayon", "dplyr", "tidyr", "crul", "xml2", "testthat", "anytime","lubridate", "segmented", "xts", "zoo",

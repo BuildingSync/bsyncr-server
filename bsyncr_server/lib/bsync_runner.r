@@ -1,5 +1,10 @@
 #! /usr/bin/Rscript
 
+"""
+BuildingSync®, Copyright (c) Alliance for Sustainable Energy, LLC, and other contributors.
+See also https://github.com/BuildingSync/bsyncr-server/blob/main/LICENSE.txt
+"""
+
 library("nmecr")
 library("bsyncr")
 library("rjson")

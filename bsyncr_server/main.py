@@ -1,3 +1,8 @@
+"""
+BuildingSync®, Copyright (c) Alliance for Sustainable Energy, LLC, and other contributors.
+See also https://github.com/BuildingSync/bsyncr-server/blob/main/LICENSE.txt
+"""
+
 from io import BytesIO
 import json
 from os import path
