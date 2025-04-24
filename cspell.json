@@ -14,10 +14,13 @@
     "dplyr",
     "Drybulb",
     "elec",
+    "libv",
+    "libxmlsec",
     "NMEC",
     "nmecr",
     "NOAA",
     "noaakey",
+    "PYTHONUNBUFFERED",
     "rnoaa",
     "testthat",
     "tidyr"

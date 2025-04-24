@@ -48,23 +48,23 @@ RUN Rscript /tmp/install_r_packages.R \
     && rm -f /tmp/install_r_packages.R \
     && strip /usr/local/lib/R/site-library/*/libs/*.so
 
-# set work directory
+
+COPY ./requirements.txt /usr/src/app/requirements.txt
+
 WORKDIR /usr/src/app
 
-RUN mkdir /usr/src/schematron
-RUN wget -O '/usr/src/schematron/bsyncr_schematron.sch' 'https://raw.githubusercontent.com/BuildingSync/bsyncr/develop/bsyncr_schematron.sch'
+# Install required Python packages
+RUN bash -c "source /root/.bashrc && python -m pip install \
+    --no-cache-dir -r requirements.txt"
+
+RUN mkdir -p /usr/src/schematron && \
+    wget -O '/usr/src/schematron/bsyncr_schematron.sch' 'https://raw.githubusercontent.com/BuildingSync/bsyncr/develop/bsyncr_schematron.sch'
 
 # set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV FLASK_APP=/usr/src/app/bsyncr_server/main.py
 
-# install dependencies
-RUN pip install --upgrade pip
-COPY ./requirements.txt /usr/src/app/requirements.txt
-RUN pip install -r requirements.txt
-
-# copy project
 COPY . /usr/src/app/
 
 EXPOSE 5000

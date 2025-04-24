@@ -81,14 +81,14 @@ COPY ./requirements.txt /usr/src/app/requirements.txt
 
 WORKDIR /usr/src/app
 
-# Install required Python packages, including nrel-appfleet from the custom PyPI host
+# Install required Python packages
 RUN bash -c "source /root/.bashrc && python -m pip install \
     --no-cache-dir -r requirements.txt"
 
 RUN mkdir -p /usr/src/schematron && \
     wget -O '/usr/src/schematron/bsyncr_schematron.sch' 'https://raw.githubusercontent.com/BuildingSync/bsyncr/develop/bsyncr_schematron.sch'
 
-# Set environment variables
+# set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV FLASK_APP=/usr/src/app/bsyncr_server/main.py
