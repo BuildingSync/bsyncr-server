@@ -10,22 +10,48 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
       - name: Cache Docker layers
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Parse tag
+        id: parse_tag
+        run: |
+          DOCKER_IMAGE=seedplatform/bsyncr-server
+          if [[ ${GITHUB_EVENT_NAME} == "push" ]]; then
+            case "${GITHUB_REF}" in
+              "refs/heads/develop")
+                BSYNCR_TAG=${DOCKER_IMAGE}:develop
+                ;;
+              refs/tags/v*)
+                BSYNCR_TAG=${DOCKER_IMAGE}:${GITHUB_REF#refs/tags/v},${DOCKER_IMAGE}:latest
+                ;;
+              *)
+                echo "Unhandled GITHUB_REF (this shouldn't happen), exiting"
+                exit 1
+                ;;
+            esac
+          elif [[ ${GITHUB_EVENT_NAME} == "workflow_dispatch" ]]; then
+            BSYNCR_TAG=${DOCKER_IMAGE}:${{ github.event.inputs.docker_tag }}
+          else
+            echo "Unhandled event type (this shouldn't happen), exiting"
+            exit 1
+          fi
+          echo "bsyncr_server_tags=${BSYNCR_TAG}" >> $GITHUB_OUTPUT
       - name: Build and push
         id: docker_build
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
+          context: .
+          file: ./Dockerfile
           push: true
-          tags: seedplatform/bsyncr-server:latest
+          tags: ${{ steps.parse_tag.outputs.bsyncr_server_tags }}
