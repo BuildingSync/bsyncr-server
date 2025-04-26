@@ -129,4 +129,3 @@ There are several steps to releasing all the dependent package of this stack.
 2. For building the docker containers, make sure `install_r_packages.R` points to the correct releases of NMECR and RNOAA.
    - Verify that the `bsyncr` packing install from GitHub is pointing to the correct release (or develop branch for testing).
    - These should be the same versions that are used in the `bsyncr` package.
-
