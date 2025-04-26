@@ -7,5 +7,3 @@
 # Version 0.1.0
 
 This was the initial release that was never tagged on GitHub.
-
-- Initial functionality

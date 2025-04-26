@@ -21,8 +21,8 @@ remotes::install_github('ropensci/rnoaa@v1.4.0', upgrade='never')
 # NMECR from kW Engineering
 remotes::install_github('kW-Labs/nmecr@v1.0.17', upgrade='never')
 
-# TODO: Release version of bsyncr and link to the tag.
-remotes::install_github('BuildingSync/bsyncr', ref='develop', upgrade='never')
+# BSync package for reading/writing BuildingSync files for NMECR
+remotes::install_github('BuildingSync/bsyncr@v0.2.0', upgrade='never')
 
 library(rnoaa)
 rnoaa::ghcnd_stations()
