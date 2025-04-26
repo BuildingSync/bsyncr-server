@@ -97,14 +97,34 @@ tryCatch({
       value=load_change_point)
   }
 
-  ggplot2::ggplot(model_df, aes(x = temp, y = value)) +
-    geom_point(aes(color = variable), data=model_df[model_df$variable == "eload",]) +
-    geom_line(aes(color = variable), data=model_df[model_df$variable == "model_fit",]) +
-    xlab("Temperature") +
-    scale_y_continuous(name = "Energy Data & Model Fit (kWh)", labels = scales::comma) +
-    theme_minimal() +
-    theme(legend.position = "bottom") +
-    theme(legend.title = element_blank())
+  # display the data
+  print(model_df)
+
+  if (model$model_input_options$regression_type == "SLR") {
+    # add in the linear regression line from the model results, need to
+    # confirm, but it looks like model is in BTU and °C
+    intercept = model$model$coefficients[["(Intercept)"]] / 3.41214  # BTU to kwh
+    slope = model$model$coefficients[["temp"]] * 9/5  # °C to °F
+    ggplot2::ggplot(model_df, aes(x = temp, y = value)) +
+      geom_point(aes(color = variable), data=model_df[model_df$variable == "eload",]) +
+      geom_line(aes(color = variable), data=model_df[model_df$variable == "model_fit",]) +
+      geom_abline(intercept = intercept, slope = slope, color = "red", linetype = "dashed") +
+      xlab("Temperature") +
+      scale_y_continuous(name = "Energy Data & Model Fit (kWh)", labels = scales::comma) +
+      theme_minimal() +
+      theme(legend.position = "bottom") +
+      theme(legend.title = element_blank())
+  } else {
+    ggplot2::ggplot(model_df, aes(x = temp, y = value)) +
+      geom_point(aes(color = variable), data=model_df[model_df$variable == "eload",]) +
+      geom_line(aes(color = variable), data=model_df[model_df$variable == "model_fit",]) +
+      xlab("Temperature") +
+      scale_y_continuous(name = "Energy Data & Model Fit (kWh)", labels = scales::comma) +
+      theme_minimal() +
+      theme(legend.position = "bottom") +
+      theme(legend.title = element_blank())
+  }
+
 
   ggsave(output_plot)
 }, error = function(e) {

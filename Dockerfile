@@ -1,44 +1,40 @@
-FROM python:3.12-slim-bullseye
+FROM rocker/r-ver:4.4.3
 
-# install R and other packages
-RUN apt-get update \
-    && apt-get -y install \
-        build-essential \
-        build-essential \
-        r-base \
-        r-base-dev \
-        curl \
-        git \
-        libbz2-dev \
-        libcurl4-openssl-dev \
-        libfreetype6-dev \
-        libjpeg-dev \
-        libffi-dev \
-        libfontconfig1-dev \
-        libfribidi-dev \
-        libgit2-dev \
-        libharfbuzz-dev \
-        liblzma-dev \
-        libncurses5-dev \
-        libpng-dev \
-        libreadline-dev \
-        libsqlite3-dev \
-        libssl-dev \
-        libtiff5-dev \
-        libv8-dev \
-        libxml2-dev \
-        libxmlsec1-dev \
-        libxslt1-dev \
-        llvm \
-        tk-dev \
-        wget \
-        xz-utils \
-        zlib1g-dev \
-        python3-dev && \
-        rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    libbz2-dev \
+    libcurl4-openssl-dev \
+    libfreetype6-dev \
+    libjpeg-dev \
+    libffi-dev \
+    libfontconfig1-dev \
+    libfribidi-dev \
+    libgit2-dev \
+    libharfbuzz-dev \
+    liblzma-dev \
+    libncurses5-dev \
+    libpng-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libssl-dev \
+    libtiff5-dev \
+    libv8-dev \
+    libxml2-dev \
+    libxmlsec1-dev \
+    libxslt1-dev \
+    llvm \
+    tk-dev \
+    wget \
+    xz-utils \
+    zlib1g-dev && \
+    rm -rf /var/lib/apt/lists/*
 
+# use bash, not sh
 SHELL ["/bin/bash", "-c"]
-
 
 # Copy over the install packages script
 COPY ./install_r_packages.R /tmp/install_r_packages.R
@@ -48,13 +44,30 @@ RUN Rscript /tmp/install_r_packages.R \
     && rm -f /tmp/install_r_packages.R \
     && strip /usr/local/lib/R/site-library/*/libs/*.so
 
+# Install pyenv and Python
+ENV PYTHON_VERSION=3.10.6
+ENV PYENV_ROOT="/root/.pyenv"
+ENV PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
+
+RUN git clone https://github.com/pyenv/pyenv.git $PYENV_ROOT && \
+    $PYENV_ROOT/bin/pyenv install $PYTHON_VERSION && \
+    $PYENV_ROOT/bin/pyenv global $PYTHON_VERSION
+
+# Update shell configuration for pyenv in Docker environment
+RUN echo 'export PYENV_ROOT="/root/.pyenv"' >> /root/.bashrc \
+    && echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> /root/.bashrc \
+    && echo 'eval "$(pyenv init --path)"' >> /root/.bashrc \
+    && echo 'eval "$(pyenv init -)"' >> /root/.bashrc
+
+# Install pip 24.2 for Python
+RUN bash -c "source /root/.bashrc && python3 -m ensurepip --upgrade && python3 -m pip install --upgrade pip"
 
 COPY ./requirements.txt /usr/src/app/requirements.txt
 
 WORKDIR /usr/src/app
 
 # Install required Python packages
-RUN bash -c "source /root/.bashrc && python -m pip install \
+RUN bash -c "source /root/.bashrc && python3 -m pip install \
     --no-cache-dir -r requirements.txt"
 
 RUN mkdir -p /usr/src/schematron && \
@@ -69,4 +82,4 @@ COPY . /usr/src/app/
 
 EXPOSE 5000
 
-CMD ["python", "manage.py", "run", "-h", "0.0.0.0"]
+CMD ["python3", "manage.py", "run", "-h", "0.0.0.0"]

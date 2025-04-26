@@ -11,6 +11,7 @@
     "crul",
     "dataframe",
     "datatypeid",
+    "docker",
     "dplyr",
     "Drybulb",
     "elec",
@@ -21,6 +22,7 @@
     "NOAA",
     "noaakey",
     "PYTHONUNBUFFERED",
+    "RMPA",
     "rnoaa",
     "testthat",
     "tidyr"
