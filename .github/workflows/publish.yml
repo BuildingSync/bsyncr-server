@@ -6,11 +6,11 @@ on:
       - develop
       - test-build-docker
     tags:
-      - '*'
+      - "*"
   workflow_dispatch:
     inputs:
       docker_tag:
-        description: 'Tag suffix; will be used as seedplatform/bsyncr-server:{docker_tag}'
+        description: "Tag suffix; will be used as seedplatform/bsyncr-server:{docker_tag}"
         required: true
 
 jobs:
