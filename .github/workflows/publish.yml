@@ -74,5 +74,4 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          platforms: linux/amd64,linux/arm64
           tags: ${{ steps.parse_tag.outputs.bsyncr_server_tags }}
