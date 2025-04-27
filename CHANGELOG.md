@@ -1,8 +1,17 @@
 # Version 0.2.0
 
-- Upgrade Python
-- Upgrade R and related packages (RNOAA, Bsyncr, NMECR)
-- Add improved instructions in README
+## What's Changed
+
+- Add new bsyncr-server using rocker base image by @dhaley in https://github.com/BuildingSync/bsyncr-server/pull/7
+- Update versions, add integration tests, update documentation, restructure files by @nllong in https://github.com/BuildingSync/bsyncr-server/pull/8
+- Fix docker auto build for publishing on develop and tags by @nllong in https://github.com/BuildingSync/bsyncr-server/pull/9
+- Run R auto style fixes by @nllong in https://github.com/BuildingSync/bsyncr-server/pull/10
+
+## New Contributors
+
+- @dhaley made their first contribution in https://github.com/BuildingSync/bsyncr-server/pull/7
+
+**Full Changelog**: https://github.com/BuildingSync/bsyncr-server/compare/v0.1.0...v0.2.0
 
 # Version 0.1.0
 

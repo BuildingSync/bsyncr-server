@@ -114,8 +114,21 @@ e.g.,
 
 ## Releasing the stack
 
+There are several steps to releasing all the dependent package of this stack.
+
+1. Ensure that the `requirements.txt` file is pointing to a correct release of the Building/TestSuite package (repository).
+2. For building the docker containers, make sure `install_r_packages.R` points to the correct releases of NMECR and RNOAA.
+   - Verify that the `bsyncr` package install from GitHub is pointing to the correct release (or develop branch for testing).
+   - These should be the same versions that are used in the `bsyncr` package.
+
+Now follow the process for releasing:
+
+- Create a branch with the prepared release change log.
+- For testing purposes, make sure the versions of NMECR and RNOAA are correct in the `install_r_packages.R` script
+- Create CHANGELOG in GitHub, paste in updates into CHANGELOG.md. Use semantic versioning for the next version.
+- Run `pre-commit` locally
 - Format the R files
-- Open `bysync-server.Rproj` in RStudio
+- Open `bsyncr-server.Rproj` in RStudio
 - In RStudio, format all the R files by running the following commands in RStudio
 
 ```R
@@ -123,9 +136,8 @@ install.packages("styler")
 styler::style_dir()
 ```
 
-There are several steps to releasing all the dependent package of this stack.
-
-1. Ensure that the `requirements.txt` file is pointing to a correct release of the Building/TestSuite package (repository).
-2. For building the docker containers, make sure `install_r_packages.R` points to the correct releases of NMECR and RNOAA.
-   - Verify that the `bsyncr` package install from GitHub is pointing to the correct release (or develop branch for testing).
-   - These should be the same versions that are used in the `bsyncr` package.
+- Merge release prep PR to develop
+- Test as needed
+- To release, from the command line merge latest develop into latest main: `git merge --ff-only origin develop`. This will point the HEAD of main to latest develop. Then push the main branch to GitHub with `git push`, which may require a developer with elevated privileges to push to main.
+- Back on GitHub create a new tag in GitHub against main and copy the change log notes into the tag description.
+- Tag on GitHub, copy over the correct version (format vX.Y.Z) and CHANGELOG content.
