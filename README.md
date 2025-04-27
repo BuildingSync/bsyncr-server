@@ -128,7 +128,7 @@ Now follow the process for releasing:
 - Create CHANGELOG in GitHub, paste in updates into CHANGELOG.md. Use semantic versioning for the next version.
 - Run `pre-commit` locally
 - Format the R files
-- Open `bysync-server.Rproj` in RStudio
+- Open `bsyncr-server.Rproj` in RStudio
 - In RStudio, format all the R files by running the following commands in RStudio
 
 ```R
