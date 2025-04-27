@@ -59,6 +59,8 @@ jobs:
           fi
           echo "bsyncr_server_tags=${BSYNCR_TAG}" >> $GITHUB_OUTPUT
           echo "BSYNCR_TAG=${BSYNCR_TAG}"
+      - name: List files
+        run: ls -la
       - name: Build and push
         id: docker_build
         uses: docker/build-push-action@v5
