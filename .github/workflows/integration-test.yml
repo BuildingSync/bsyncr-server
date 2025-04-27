@@ -1,0 +1,67 @@
+name: integration-test
+
+on:
+  push:
+
+jobs:
+  docker-build-and-test:
+    name: Build Docker and Test Server
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      NOAA_TOKEN: ${{ secrets.NOAA_TOKEN }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker Image
+        run: |
+          docker build -t bsyncr-server .
+
+      - name: Run Docker Container
+        run: |
+          docker run -d -p 8080:5000 \
+            --name bsyncr-server \
+            -e NOAA_TOKEN \
+            bsyncr-server
+          echo "Docker container started successfully"
+
+      - name: Extra wait
+        run: |
+          sleep 30
+
+      - name: Health check
+        run: |
+          curl -f http://localhost:8080/health || exit 1
+
+      - name: Post BuildingSync file
+        run: |
+          curl -X POST "http://localhost:8080/?model_type=SLR" \
+            -F "file=@tests/data/ex_bsync.xml" \
+            --max-time 120 \
+            --output ./tests/slr_results.zip
+          # check if the slr_results.zip file exists, error if not
+          if [ ! -f ./tests/slr_results.zip ]; then
+            echo "Error: slr_results.zip not found!"
+            exit 1
+          fi
+          # check the size of the file, should be > 10kb
+          if [ $(stat -c%s "./tests/slr_results.zip") -le 10240 ]; then
+            echo "Error: slr_results.zip is less than 10kb!"
+            exit 1
+          fi
+          echo "slr_results.zip file exists, proceeding with next steps."
+
+      - name: Cleanup Docker Container
+        run: |
+          docker stop bsyncr-server
+          docker rm bsyncr-server
+
+      - name: Upload HTML Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: slr_results.zip
+          path: ./tests/slr_results.zip

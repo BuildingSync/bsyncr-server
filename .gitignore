@@ -1,0 +1,13 @@
+.DS_Store
+.python-version
+.vscode
+.ruff_cache
+.DS_Store
+.python-version
+.Renviron
+.Rhistory
+.RData
+
+node_modules
+tests/*.zip
+.Rproj.user
