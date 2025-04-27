@@ -18,118 +18,134 @@ run_analysis <- function(bsync_filepath, model_type) {
 
   baseline_xpath <- sprintf("//auc:Scenario[@ID = '%s']", baseline_scenario_id)
   sc_baseline <- xml2::xml_find_first(bsync_doc, baseline_xpath)
-  not_used <- sc_baseline %>% bsyncr::bs_stub_derived_model(dm_id = "DerivedModel-bsyncr",
-                                                            dm_period = "Baseline")
+  not_used <- sc_baseline %>% bsyncr::bs_stub_derived_model(
+    dm_id = "DerivedModel-bsyncr",
+    dm_period = "Baseline"
+  )
 
-  b_df <- bsyncr::bs_parse_nmecr_df(bsync_doc, insert_weather_data=TRUE)
+  b_df <- bsyncr::bs_parse_nmecr_df(bsync_doc, insert_weather_data = TRUE)
 
   if (model_type == "SLR") {
-    model <- nmecr::model_with_SLR(b_df,
-                                   nmecr::assign_model_inputs(regression_type = "SLR"))
+    model <- nmecr::model_with_SLR(
+      b_df,
+      nmecr::assign_model_inputs(regression_type = "SLR")
+    )
   } else if (model_type == "3PC") {
-    model <- nmecr::model_with_CP(b_df,
-                                  nmecr::assign_model_inputs(regression_type = "3PC"))
+    model <- nmecr::model_with_CP(
+      b_df,
+      nmecr::assign_model_inputs(regression_type = "3PC")
+    )
   } else if (model_type == "3PH") {
-    model <- nmecr::model_with_CP(b_df,
-                                  nmecr::assign_model_inputs(regression_type = "3PH"))
+    model <- nmecr::model_with_CP(
+      b_df,
+      nmecr::assign_model_inputs(regression_type = "3PH")
+    )
   } else if (model_type == "4P") {
-    model <- nmecr::model_with_CP(b_df,
-                                  nmecr::assign_model_inputs(regression_type = "4P"))
+    model <- nmecr::model_with_CP(
+      b_df,
+      nmecr::assign_model_inputs(regression_type = "4P")
+    )
   } else {
-    stop('Invalid model_type')
+    stop("Invalid model_type")
   }
 
   # add model to bsync tree
-  bs_gen_dm_nmecr(nmecr_baseline_model = model,
-                  x = bsync_doc)
+  bs_gen_dm_nmecr(
+    nmecr_baseline_model = model,
+    x = bsync_doc
+  )
 
-  return(list("bsync_doc"=bsync_doc, "model"=model))
+  return(list("bsync_doc" = bsync_doc, "model" = model))
 }
 
 # setup
-args <- commandArgs(trailingOnly=TRUE)
+args <- commandArgs(trailingOnly = TRUE)
 if (length(args) != 3) {
-  print('USAGE:')
-  print('Rscript bsync_runner.r bsync_input model_type output_directory')
-  print('  bsync_input: path to input file')
-  print('  model_type: type of model to fit')
-  print('  output_directory: directory to output files')
+  print("USAGE:")
+  print("Rscript bsync_runner.r bsync_input model_type output_directory")
+  print("  bsync_input: path to input file")
+  print("  model_type: type of model to fit")
+  print("  output_directory: directory to output files")
   stop("Invalid arguments to script. See usage")
 }
 bsync_filepath <- args[1]
 model_type <- args[2]
 output_dir <- args[3]
-output_xml <- paste(output_dir, "result.xml", sep="/")
-output_plot <- paste(output_dir, "plot.png", sep="/")
-err_filename <- paste(output_dir, "error.json", sep="/")
+output_xml <- paste(output_dir, "result.xml", sep = "/")
+output_plot <- paste(output_dir, "plot.png", sep = "/")
+err_filename <- paste(output_dir, "error.json", sep = "/")
 
-NOAA_TOKEN <- Sys.getenv('NOAA_TOKEN')
+NOAA_TOKEN <- Sys.getenv("NOAA_TOKEN")
 if (NOAA_TOKEN == "") {
   stop("Missing NOAA token env var: NOAA_TOKEN")
 }
-options(noaakey=NOAA_TOKEN)
+options(noaakey = NOAA_TOKEN)
 
-tryCatch({
-  # run analysis
-  analysis_result <- run_analysis(bsync_filepath, model_type)
-  bsync_doc <- analysis_result$bsync_doc
-  model <- analysis_result$model
+tryCatch(
+  {
+    # run analysis
+    analysis_result <- run_analysis(bsync_filepath, model_type)
+    bsync_doc <- analysis_result$bsync_doc
+    model <- analysis_result$model
 
-  # save the updated bsync doc
-  xml2::write_xml(bsync_doc, output_xml)
+    # save the updated bsync doc
+    xml2::write_xml(bsync_doc, output_xml)
 
-  # save the plot
-  model_df <- model$training_data %>%
-    tidyr::gather(key = "variable", value = "value", c("eload", "model_fit"))
+    # save the plot
+    model_df <- model$training_data %>%
+      tidyr::gather(key = "variable", value = "value", c("eload", "model_fit"))
 
-  if (model$model_input_options$regression_type != "SLR") {
-    # Add a data point for the derived change point to make sure the line plot looks correct
-    temp_change_point <- abs(model$model$psi[2]) # this is the estimated temperature for the change point - taking abs b/c it is incorrectly negative for some models
-    predictions <- calculate_model_predictions(
-      training_data=model$training_data,
-      prediction_data=as.data.frame(list(time=c(2019-01-01), temp=c(temp_change_point))),
-      modeled_object=model
-    )
-    load_change_point <- predictions$predictions[1]
-    model_df <- model_df %>% add_row(
-      temp=temp_change_point,
-      variable="model_fit",
-      value=load_change_point)
+    if (model$model_input_options$regression_type != "SLR") {
+      # Add a data point for the derived change point to make sure the line plot looks correct
+      temp_change_point <- abs(model$model$psi[2]) # this is the estimated temperature for the change point - taking abs b/c it is incorrectly negative for some models
+      predictions <- calculate_model_predictions(
+        training_data = model$training_data,
+        prediction_data = as.data.frame(list(time = c(2019 - 01 - 01), temp = c(temp_change_point))),
+        modeled_object = model
+      )
+      load_change_point <- predictions$predictions[1]
+      model_df <- model_df %>% add_row(
+        temp = temp_change_point,
+        variable = "model_fit",
+        value = load_change_point
+      )
+    }
+
+    # display the data
+    print(model_df)
+
+    if (model$model_input_options$regression_type == "SLR") {
+      # add in the linear regression line from the model results, need to
+      # confirm, but it looks like model is in BTU and °C
+      intercept <- model$model$coefficients[["(Intercept)"]] / 3.41214 # BTU to kwh
+      slope <- model$model$coefficients[["temp"]] * 9 / 5 # °C to °F
+      ggplot2::ggplot(model_df, aes(x = temp, y = value)) +
+        geom_point(aes(color = variable), data = model_df[model_df$variable == "eload", ]) +
+        geom_line(aes(color = variable), data = model_df[model_df$variable == "model_fit", ]) +
+        geom_abline(intercept = intercept, slope = slope, color = "red", linetype = "dashed") +
+        xlab("Temperature") +
+        scale_y_continuous(name = "Energy Data & Model Fit (kWh)", labels = scales::comma) +
+        theme_minimal() +
+        theme(legend.position = "bottom") +
+        theme(legend.title = element_blank())
+    } else {
+      ggplot2::ggplot(model_df, aes(x = temp, y = value)) +
+        geom_point(aes(color = variable), data = model_df[model_df$variable == "eload", ]) +
+        geom_line(aes(color = variable), data = model_df[model_df$variable == "model_fit", ]) +
+        xlab("Temperature") +
+        scale_y_continuous(name = "Energy Data & Model Fit (kWh)", labels = scales::comma) +
+        theme_minimal() +
+        theme(legend.position = "bottom") +
+        theme(legend.title = element_blank())
+    }
+
+
+    ggsave(output_plot)
+  },
+  error = function(e) {
+    print(e)
+    err <- list(message = e$message)
+    write(rjson::toJSON(err), err_filename)
+    quit(status = 1)
   }
-
-  # display the data
-  print(model_df)
-
-  if (model$model_input_options$regression_type == "SLR") {
-    # add in the linear regression line from the model results, need to
-    # confirm, but it looks like model is in BTU and °C
-    intercept = model$model$coefficients[["(Intercept)"]] / 3.41214  # BTU to kwh
-    slope = model$model$coefficients[["temp"]] * 9/5  # °C to °F
-    ggplot2::ggplot(model_df, aes(x = temp, y = value)) +
-      geom_point(aes(color = variable), data=model_df[model_df$variable == "eload",]) +
-      geom_line(aes(color = variable), data=model_df[model_df$variable == "model_fit",]) +
-      geom_abline(intercept = intercept, slope = slope, color = "red", linetype = "dashed") +
-      xlab("Temperature") +
-      scale_y_continuous(name = "Energy Data & Model Fit (kWh)", labels = scales::comma) +
-      theme_minimal() +
-      theme(legend.position = "bottom") +
-      theme(legend.title = element_blank())
-  } else {
-    ggplot2::ggplot(model_df, aes(x = temp, y = value)) +
-      geom_point(aes(color = variable), data=model_df[model_df$variable == "eload",]) +
-      geom_line(aes(color = variable), data=model_df[model_df$variable == "model_fit",]) +
-      xlab("Temperature") +
-      scale_y_continuous(name = "Energy Data & Model Fit (kWh)", labels = scales::comma) +
-      theme_minimal() +
-      theme(legend.position = "bottom") +
-      theme(legend.title = element_blank())
-  }
-
-
-  ggsave(output_plot)
-}, error = function(e) {
-  print(e)
-  err <- list(message=e$message)
-  write(rjson::toJSON(err), err_filename)
-  quit(status=1)
-})
+)
