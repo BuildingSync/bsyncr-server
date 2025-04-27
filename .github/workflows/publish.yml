@@ -3,7 +3,15 @@ name: Publish
 on:
   push:
     branches:
-      - main
+      - develop
+      - test-build-docker
+    tags:
+      - '*'
+  workflow_dispatch:
+    inputs:
+      docker_tag:
+        description: 'Tag suffix; will be used as seedplatform/bsyncr-server:{docker_tag}'
+        required: true
 
 jobs:
   publish:
@@ -29,6 +37,9 @@ jobs:
           DOCKER_IMAGE=seedplatform/bsyncr-server
           if [[ ${GITHUB_EVENT_NAME} == "push" ]]; then
             case "${GITHUB_REF}" in
+              "refs/heads/test-build-docker")
+                BSYNCR_TAG=${DOCKER_IMAGE}:test-build-docker
+                ;;
               "refs/heads/develop")
                 BSYNCR_TAG=${DOCKER_IMAGE}:develop
                 ;;
