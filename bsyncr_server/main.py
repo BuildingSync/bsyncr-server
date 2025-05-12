@@ -59,7 +59,7 @@ def root():
             f"Must provide one of the following: {', '.join(MODEL_CHOICES)}",
         )
 
-    with tempfile.TemporaryDirectory() as tmpdirname:
+    with tempfile.mkdtemp() as tmpdirname:
         completed_process = subprocess.run(
             ["Rscript", R_SCRIPT_PATH, INPUT_FILE_PATH, model_type, tmpdirname],
         )
