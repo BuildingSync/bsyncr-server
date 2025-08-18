@@ -1,22 +1,31 @@
 ARG BASE_IMAGE_TAG
 
+# Stage to fetch and install custom certs and system certs on Debian
 FROM debian:bookworm-slim AS certificates
-# Install necessary dependencies (curl and ca-certificates)
-RUN apk add --no-cache curl ca-certificates && \
-    curl -fsSLk -o /usr/local/share/ca-certificates/nrel_root.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_root.pem && \
-    curl -fsSLk -o /usr/local/share/ca-certificates/nrel_xca1.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_xca1.pem && \
+
+# Install necessary packages (curl and ca-certificates)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+# Add custom certificates
+RUN curl -fsSL -o /usr/local/share/ca-certificates/nrel_root.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_root.pem && \
+    curl -fsSL -o /usr/local/share/ca-certificates/nrel_xca1.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_xca1.pem && \
     update-ca-certificates
 
+# Build the main R image
 FROM rocker/r-ver:${BASE_IMAGE_TAG:-4.4.3}
 
 RUN mkdir /usr/src/app
 
-# Copy the installed SSL certs from the node stage
+# Copy the certificates from the `certificates` stage
 COPY --from=certificates /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=certificates /usr/share/ca-certificates /usr/share/ca-certificates
 COPY --from=certificates /usr/local/share/ca-certificates /usr/local/share/ca-certificates
 
-RUN update-ca-trust
+# Update CA trust database (only required for custom certificates)
+RUN update-ca-certificates
 
 # Install system dependencies and required tools
 RUN apt-get update && \
