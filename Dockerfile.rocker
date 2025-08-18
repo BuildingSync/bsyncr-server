@@ -1,9 +1,10 @@
 ARG BASE_IMAGE_TAG
 
-FROM node:20-alpine3.16 AS node
+FROM alpine/curl:latest AS node
+CMD ["curl", "--version"]
 
 # Install necessary dependencies (curl and ca-certificates)
-RUN apk add --no-cache curl ca-certificates && \
+RUN apk add --no-cache ca-certificates && \
     curl -fsSLk -o /usr/local/share/ca-certificates/nrel_root.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_root.pem && \
     curl -fsSLk -o /usr/local/share/ca-certificates/nrel_xca1.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_xca1.pem && \
     update-ca-certificates
