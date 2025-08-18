@@ -1,21 +1,22 @@
 ARG BASE_IMAGE_TAG
 
-FROM node:20-alpine3.16 AS node
-
+FROM debian:bookworm-slim AS certificates
 # Install necessary dependencies (curl and ca-certificates)
 RUN apk add --no-cache curl ca-certificates && \
     curl -fsSLk -o /usr/local/share/ca-certificates/nrel_root.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_root.pem && \
     curl -fsSLk -o /usr/local/share/ca-certificates/nrel_xca1.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_xca1.pem && \
     update-ca-certificates
 
-FROM rocker/r-ver:${BASE_IMAGE_TAG:-4.4.3}
+FROM public.ecr.aws/rocker/r-ver:${BASE_IMAGE_TAG:-4.4.3}
 
 RUN mkdir /usr/src/app
 
 # Copy the installed SSL certs from the node stage
-COPY --from=node /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=node /usr/share/ca-certificates /usr/share/ca-certificates
-COPY --from=node /usr/local/share/ca-certificates /usr/local/share/ca-certificates
+COPY --from=certificates /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=certificates /usr/share/ca-certificates /usr/share/ca-certificates
+COPY --from=certificates /usr/local/share/ca-certificates /usr/local/share/ca-certificates
+
+RUN update-ca-trust
 
 # Install system dependencies and required tools
 RUN apt-get update && \
