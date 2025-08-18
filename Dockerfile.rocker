@@ -1,17 +1,13 @@
 ARG BASE_IMAGE_TAG
 
 # Stage to fetch and install custom certs and system certs on Debian
-FROM debian:bookworm-slim AS certificates
+FROM public.ecr.aws/debian:bookworm-slim AS certificates
 
 # Install necessary packages (curl and ca-certificates)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
-
+RUN apt update && apt install -y curl
 # Add custom certificates
-RUN curl -fsSL -o /usr/local/share/ca-certificates/nrel_root.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_root.pem && \
-    curl -fsSL -o /usr/local/share/ca-certificates/nrel_xca1.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_xca1.pem && \
+RUN curl -fsSLk -o /usr/local/share/ca-certificates/nrel_root.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_root.pem && \
+    curl -fsSLk -o /usr/local/share/ca-certificates/nrel_xca1.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_xca1.pem && \
     update-ca-certificates
 
 # Build the main R image
