@@ -3,17 +3,17 @@ name: CI - Dockerfile.rocker
 on:
   pull_request:
     paths:
-      - 'Dockerfile.rocker'
-      - 'install_r_packages.R'
-      - 'docker-compose.ci.yml'
-      - '.github/workflows/ci-rocker.yml'
+      - "Dockerfile.rocker"
+      - "install_r_packages.R"
+      - "docker-compose.ci.yml"
+      - ".github/workflows/ci-rocker.yml"
   push:
     branches: [develop]
     paths:
-      - 'Dockerfile.rocker'
-      - 'install_r_packages.R'
-      - 'docker-compose.ci.yml'
-      - '.github/workflows/ci-rocker.yml'
+      - "Dockerfile.rocker"
+      - "install_r_packages.R"
+      - "docker-compose.ci.yml"
+      - ".github/workflows/ci-rocker.yml"
 
 jobs:
   build-rocker:
