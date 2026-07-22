@@ -4,9 +4,11 @@ ARG ROCKER_REGISTRY
 FROM ${ROCKER_REGISTRY:+${ROCKER_REGISTRY}/}node:22-alpine3.19 AS node
 
 # Install necessary dependencies (curl and ca-certificates)
+# NLR certs are only reachable from internal networks (CodeBuild VPC);
+# on public CI runners this fails gracefully and the build continues without them.
 RUN apk add --no-cache curl ca-certificates && \
-    curl -fsSLk -o /usr/local/share/ca-certificates/nrel_root.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_root.pem && \
-    curl -fsSLk -o /usr/local/share/ca-certificates/nrel_xca1.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_xca1.pem && \
+    (curl -fsSLk --connect-timeout 5 -o /usr/local/share/ca-certificates/nrel_root.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_root.pem || true) && \
+    (curl -fsSLk --connect-timeout 5 -o /usr/local/share/ca-certificates/nrel_xca1.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_xca1.pem || true) && \
     update-ca-certificates
 
 FROM ${ROCKER_REGISTRY:+${ROCKER_REGISTRY}/}rocker/r-ver:${BASE_IMAGE_TAG:-4.4.3}
