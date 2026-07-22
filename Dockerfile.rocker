@@ -1,6 +1,7 @@
 ARG BASE_IMAGE_TAG
+ARG ROCKER_REGISTRY
 
-FROM node:22-alpine3.19
+FROM ${ROCKER_REGISTRY:+${ROCKER_REGISTRY}/}node:22-alpine3.19 AS node
 
 # Install necessary dependencies (curl and ca-certificates)
 RUN apk add --no-cache curl ca-certificates && \
@@ -8,7 +9,7 @@ RUN apk add --no-cache curl ca-certificates && \
     curl -fsSLk -o /usr/local/share/ca-certificates/nrel_xca1.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_xca1.pem && \
     update-ca-certificates
 
-FROM rocker/r-ver:${BASE_IMAGE_TAG:-4.4.3}
+FROM ${ROCKER_REGISTRY:+${ROCKER_REGISTRY}/}rocker/r-ver:${BASE_IMAGE_TAG:-4.4.3}
 
 RUN mkdir /usr/src/app
 
