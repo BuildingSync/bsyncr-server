@@ -1,0 +1,48 @@
+version: "3.8"
+# CI smoke test for Dockerfile.rocker (appfleet ECS build)
+# Usage: docker compose -f docker-compose.ci.yml up --build --abort-on-container-exit
+
+services:
+  bsyncr-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.rocker
+      args:
+        BASE_IMAGE_TAG: "4.4.3"
+    ports:
+      - "8080:5000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+  smoke-test:
+    image: curlimages/curl:latest
+    depends_on:
+      bsyncr-server:
+        condition: service_healthy
+    volumes:
+      - ./tests:/tests
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "=== Health check ==="
+        curl -f http://bsyncr-server:5000/health || exit 1
+        echo ""
+        echo "=== POST BuildingSync file ==="
+        curl -X POST "http://bsyncr-server:5000/?model_type=SLR" \
+          -F "file=@/tests/data/ex_bsync.xml" \
+          --max-time 120 \
+          --output /tmp/slr_results.zip
+        if [ ! -f /tmp/slr_results.zip ]; then
+          echo "FAIL: slr_results.zip not created"
+          exit 1
+        fi
+        SIZE=$(stat -c%s /tmp/slr_results.zip 2>/dev/null || stat -f%z /tmp/slr_results.zip)
+        if [ "$SIZE" -le 10240 ]; then
+          echo "FAIL: slr_results.zip is less than 10kb (got $SIZE bytes)"
+          exit 1
+        fi
+        echo "PASS: slr_results.zip is $SIZE bytes"

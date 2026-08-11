@@ -1,14 +1,18 @@
 ARG BASE_IMAGE_TAG
+ARG ROCKER_REGISTRY
+ARG NODE_REGISTRY
 
-FROM node:22-alpine3.19
+FROM ${NODE_REGISTRY:+${NODE_REGISTRY}/}node:22-alpine3.19 AS node
 
 # Install necessary dependencies (curl and ca-certificates)
-RUN apk add --no-cache curl ca-certificates && \
-    curl -fsSLk -o /usr/local/share/ca-certificates/nrel_root.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_root.pem && \
-    curl -fsSLk -o /usr/local/share/ca-certificates/nrel_xca1.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_xca1.pem && \
-    update-ca-certificates
+# NLR certs are only reachable from internal networks (CodeBuild VPC);
+# on public CI runners this fails gracefully and the build continues without them.
+RUN (apk add --no-cache curl ca-certificates || true) && \
+    (curl -fsSLk --connect-timeout 5 -o /usr/local/share/ca-certificates/nrel_root.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_root.pem || true) && \
+    (curl -fsSLk --connect-timeout 5 -o /usr/local/share/ca-certificates/nrel_xca1.crt https://raw.github.nrel.gov/TADA/nrel-certs/v20180329/certs/nrel_xca1.pem || true) && \
+    update-ca-certificates || true
 
-FROM rocker/r-ver:${BASE_IMAGE_TAG:-4.4.3}
+FROM ${ROCKER_REGISTRY:+${ROCKER_REGISTRY}/}rocker/r-ver:${BASE_IMAGE_TAG:-4.4.3}
 
 RUN mkdir /usr/src/app
 
@@ -16,6 +20,11 @@ RUN mkdir /usr/src/app
 COPY --from=node /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=node /usr/share/ca-certificates /usr/share/ca-certificates
 COPY --from=node /usr/local/share/ca-certificates /usr/local/share/ca-certificates
+
+# Rebuild the CA trust store so R/libcurl trusts the NLR proxy certs
+RUN update-ca-certificates
+ENV CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 
 # Install system dependencies and required tools
 RUN apt-get update && \
