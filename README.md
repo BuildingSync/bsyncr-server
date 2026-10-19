@@ -1,6 +1,6 @@
 # bsyncr server
 
-A light HTTP wrapper around the `bsyncr` R package.
+A light HTTP wrapper around the `bsyncr` R package. This is deployed in conjunction with the SEED Platform.
 
 ## Setup
 
