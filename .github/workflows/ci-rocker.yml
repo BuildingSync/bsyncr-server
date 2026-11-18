@@ -29,7 +29,7 @@ jobs:
       - name: Build Dockerfile.rocker
         run: |
           docker build -t bsyncr-server-rocker \
-            --build-arg BASE_IMAGE_TAG=4.4.3 \
+            --build-arg BASE_IMAGE_TAG=4.6 \
             -f Dockerfile.rocker .
 
       - name: Run smoke test
