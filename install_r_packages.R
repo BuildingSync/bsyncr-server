@@ -1,6 +1,9 @@
-# BuildingSync®, Copyright (c) Alliance for Sustainable Energy, LLC, and other contributors.
+# BuildingSync, Copyright (c) Alliance for Sustainable Energy, LLC, and other contributors.
 # See also https://github.com/BuildingSync/bsyncr-server/blob/main/LICENSE.txt
 
+
+# Use HTTPS CRAN mirror
+options(repos = c(CRAN = "https://cloud.r-project.org"))
 
 # Install required packages if not already installed
 required_packages <- c(
@@ -10,8 +13,14 @@ required_packages <- c(
 cat("Checking and installing required packages...\n")
 for (pkg in required_packages) {
   if (!requireNamespace(pkg, quietly = TRUE)) {
-    install.packages(pkg, repos = "http://cran.us.r-project.org")
+    cat(paste0("Installing: ", pkg, "\n"))
+    install.packages(pkg)
   }
+}
+
+# Verify remotes installed successfully before proceeding
+if (!requireNamespace("remotes", quietly = TRUE)) {
+  stop("Failed to install 'remotes' package. Check network connectivity and CRAN mirror.")
 }
 
 library("remotes")

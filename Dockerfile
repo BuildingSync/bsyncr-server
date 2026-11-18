@@ -1,4 +1,7 @@
-FROM rocker/r-ver:4.4.3
+ARG DOCKERHUB_REGISTRY=docker.io
+ARG BASE_IMAGE_TAG=4.6
+
+FROM ${DOCKERHUB_REGISTRY}/rocker/r-ver:${BASE_IMAGE_TAG}
 
 RUN apt-get update && \
     apt-get upgrade -y && \
